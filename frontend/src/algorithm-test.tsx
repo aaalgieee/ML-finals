@@ -4,7 +4,7 @@ import { Button } from "./components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card"
 import { Input } from "./components/ui/input"
 import { Label } from "./components/ui/label"
-import { Brain, Activity, Stethoscope, LineChart, Network, TreeDeciduous, ArrowLeft } from 'lucide-react'
+import { Brain, Activity, LineChart, Network, TreeDeciduous, ArrowLeft } from 'lucide-react'
 
 const algorithms = [
   { id: 'linear-regression', name: 'Linear Regression', icon: LineChart, description: 'Predicting patient recovery times', inputs: ['Age', 'Treatment Duration', 'Severity Score'] },
