@@ -70,6 +70,9 @@ def predict_svm():
         app.logger.error(f"Error processing request: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
+
+
+# KNN Model
 # Load saved objects
 model = joblib.load('knn/knn_model.pkl')
 label_encoders = joblib.load('knn/label_encoders.pkl')
