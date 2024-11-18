@@ -6,11 +6,15 @@ import { Input } from "./components/ui/input"
 import { Label } from "./components/ui/label"
 import { Brain, Activity, LineChart, Network, TreeDeciduous, ArrowLeft } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
+import { Scatter } from 'react-chartjs-2'
+import { Chart, registerables } from 'chart.js'
+
+Chart.register(...registerables)
 
 const algorithms = [
   { id: 'linear-regression', name: 'Linear Regression', icon: LineChart, description: 'Predicting patient recovery times', inputs: ['Age', 'Treatment Duration', 'Severity Score'] },
   { id: 'naive-bayes', name: 'Naive Bayes', icon: Brain, description: 'Classifying patient symptoms for diagnosis', inputs: ['Symptom 1', 'Symptom 2', 'Symptom 3'] },
-  { id: 'knn', name: 'K-Nearest Neighbors', icon: Network, description: 'Identifying similar patient profiles', inputs: ['Age', 'BMI', 'Blood Pressure'] },
+  { id: 'knn', name: 'K-Nearest Neighbors', icon: Network, description: 'Identifying similar patient profiles', inputs: ['Gender', 'Age', 'Hypertension', 'Heart Disease', 'Smoking History', 'BMI', 'HbA1c Level', 'Blood Glucose Level'] },
   { id: 'svm', name: 'Support Vector Machine', icon: Activity, description: 'Classifying medical images', inputs: ['Image URL'] },
   { id: 'decision-tree', name: 'Decision Tree', icon: TreeDeciduous, description: 'Guiding treatment decisions', inputs: ['Age', 'Gender', 'Condition Severity'] },
   { id: 'ann', name: 'Artificial Neural Network', icon: Brain, description: 'Predicting disease outbreaks', inputs: ['Location', 'Season', 'Population Density'] },
@@ -31,6 +35,7 @@ export default function AlgorithmTest() {
   const [isLoading, setIsLoading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [scatterData, setScatterData] = useState<any>(null)
 
   useEffect(() => {
     const foundAlgorithm = algorithms.find(algo => algo.id === id)
@@ -88,6 +93,86 @@ export default function AlgorithmTest() {
       } catch (error) {
         console.error('Upload error:', error)
         setResult(`Error: ${error instanceof Error ? error.message : 'Error processing image'}`)
+      } finally {
+        setIsLoading(false)
+      }
+    } else if (algorithm?.id === 'knn') {
+      try {
+        const transformedInputs = {
+          gender: inputs['Gender'],
+          age: Number(inputs['Age']),
+          hypertension: inputs['Hypertension'] === 'true' ? 1 : 0,
+          heart_disease: inputs['Heart Disease'] === 'true' ? 1 : 0,
+          smoking_history: inputs['Smoking History'],
+          bmi: parseFloat(inputs['BMI']),
+          HbA1c_level: parseFloat(inputs['HbA1c Level']),
+          blood_glucose_level: parseInt(inputs['Blood Glucose Level'], 10)
+        }
+
+        console.log('Sending data:', transformedInputs);
+
+        const response = await fetch('http://127.0.0.1:5000/api/knn/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ features: transformedInputs })
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log('Received data:', data);
+
+        if (data.prediction) {
+          setResult(`Prediction: ${data.prediction} (Risk of Diabetes)`)
+          
+          if (data.scatter_plot_data) {
+            const scatterPlotData = {
+              datasets: [
+                {
+                  label: 'Patient Data',
+                  data: data.scatter_plot_data || [],
+                  backgroundColor: data.prediction === 'Diabetic' ? 'red' : 'green',
+                  pointRadius: 8,
+                  pointStyle: 'circle',
+                  borderColor: 'black',
+                  borderWidth: 1
+                }
+              ],
+              options: {
+                plugins: {
+                  title: {
+                    display: true,
+                    text: 'Patient Classification'
+                  },
+                  legend: {
+                    display: true,
+                    position: 'top'
+                  }
+                },
+                scales: {
+                  x: { 
+                    title: { display: true, text: 'Age' },
+                    grid: { display: true }
+                  },
+                  y: { 
+                    title: { display: true, text: 'BMI' },
+                    grid: { display: true }
+                  }
+                }
+              }
+            }
+            setScatterData(scatterPlotData)
+          }
+        } else {
+          setResult('Error: Could not generate prediction')
+        }
+      } catch (error) {
+        console.error('Prediction error:', error)
+        setResult(`Error: ${error instanceof Error ? error.message : 'Error processing prediction'}`)
       } finally {
         setIsLoading(false)
       }
@@ -180,14 +265,57 @@ export default function AlgorithmTest() {
                   {algorithm.inputs.map((input) => (
                     <div key={input} className="space-y-2">
                       <Label htmlFor={input} className="text-gray-700">{input}</Label>
-                      <Input
-                        id={input}
-                        value={inputs[input]}
-                        onChange={(e) => handleInputChange(input, e.target.value)}
-                        required
-                        className="bg-gray-50 hover:bg-gray-100 focus:bg-white"
-                        placeholder={`Enter ${input.toLowerCase()}`}
-                      />
+                      {['Gender', 'Hypertension', 'Heart Disease', 'Smoking History'].includes(input) ? (
+                        <select
+                          id={input}
+                          value={inputs[input]}
+                          onChange={(e) => handleInputChange(input, e.target.value)}
+                          required
+                          className="bg-gray-50 hover:bg-gray-100 focus:bg-white w-full p-2 border border-gray-300 rounded-md"
+                        >
+                          {input === 'Gender' && (
+                            <>
+                              <option value="">Select Gender</option>
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                            </>
+                          )}
+                          {input === 'Hypertension' && (
+                            <>
+                              <option value="">Have Hypertension?</option>
+                              <option value="true">Yes</option>
+                              <option value="false">No</option>
+                            </>
+                          )}
+                          {input === 'Heart Disease' && (
+                            <>
+                              <option value="">Have Heart Disease?</option>
+                              <option value="true">Yes</option>
+                              <option value="false">No</option>
+                            </>
+                          )}
+                          {input === 'Smoking History' && (
+                            <>
+                              <option value="">Smoking History</option>
+                              <option value="never">never</option>
+                              <option value="former">former</option>
+                              <option value="current">current</option>
+                              <option value="not current">not current</option>
+                              <option value="No Info">No Info</option>  {/* Changed from "no info" to "No Info" */}
+                              <option value="ever">ever</option>
+                            </>
+                          )}
+                        </select>
+                      ) : (
+                        <Input
+                          id={input}
+                          value={inputs[input]}
+                          onChange={(e) => handleInputChange(input, e.target.value)}
+                          required
+                          className="bg-gray-50 hover:bg-gray-100 focus:bg-white"
+                          placeholder={`Enter ${input.toLowerCase()}`}
+                        />
+                      )}
                     </div>
                   ))}
                 </>
@@ -218,6 +346,11 @@ export default function AlgorithmTest() {
               <div className="mt-6 p-4 bg-blue-50 rounded-md">
                 <h3 className="font-semibold text-lg mb-2 text-gray-900">Result</h3>
                 <p className="text-gray-800 font-medium">{result}</p>
+                {scatterData && (
+                  <div className="mt-4">
+                    <Scatter data={scatterData} />
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
