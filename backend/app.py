@@ -170,6 +170,51 @@ def predict_knn():
         return jsonify({'error': str(e)}), 500
 
 
+#Linear Regression Model
+lr_model = joblib.load('./lr/lr.pkl')
+
+@app.route('/api/lr/predict', methods=['POST'])
+def predict_lr():
+    try:
+        data = request.get_json(force=True)
+        app.logger.debug(f"Received data: {data}")
+        
+        # Extract features from request
+        features = data['features']
+        
+        # Create DataFrame with expected column names
+        input_data = pd.DataFrame([{
+            'male': features['male'],
+            'age': features['age'],
+            'currentSmoker': features['currentSmoker'],
+            'cigsPerDay': features['cigsPerDay'],
+            'BPMeds': features['BPMeds'],
+            'diabetes': features['diabetes'],
+            'totChol': features['totChol'],
+            'sysBP': features['sysBP'],
+            'diaBP': features['diaBP'],
+            'BMI': features['BMI'],
+            'heartRate': features['heartRate'],
+            'glucose': features['glucose']
+        }])
+
+        # Make prediction
+        prediction = lr_model.predict(input_data)[0]
+        
+        # Convert prediction to risk level
+        risk_level = "High Risk" if prediction >= 0.5 else "Low Risk"
+        
+        return jsonify({
+            'success': True,
+            'prediction': float(prediction),
+            'risk_level': risk_level
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error processing request: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'healthy'})

@@ -12,7 +12,26 @@ import { Chart, registerables } from 'chart.js'
 Chart.register(...registerables)
 
 const algorithms = [
-  { id: 'linear-regression', name: 'Linear Regression', icon: LineChart, description: 'Predicting patient recovery times', inputs: ['Age', 'Treatment Duration', 'Severity Score'] },
+  { 
+    id: 'linear-regression', 
+    name: 'Linear Regression', 
+    icon: LineChart, 
+    description: 'Predicting cardiovascular disease risk',
+    inputs: [
+      'Age',
+      'Male',
+      'Current Smoker',
+      'Cigarettes Per Day',
+      'BP Medications',
+      'Diabetes',
+      'Total Cholesterol',
+      'Systolic BP',
+      'Diastolic BP',
+      'BMI',
+      'Heart Rate',
+      'Glucose'
+    ]
+  },
   { id: 'naive-bayes', name: 'Naive Bayes', icon: Brain, description: 'Classifying patient symptoms for diagnosis', inputs: ['Symptom 1', 'Symptom 2', 'Symptom 3'] },
   { id: 'knn', name: 'K-Nearest Neighbors', icon: Network, description: 'Identifying similar patient profiles', inputs: ['Gender', 'Age', 'Hypertension', 'Heart Disease', 'Smoking History', 'BMI', 'HbA1c Level', 'Blood Glucose Level'] },
   { id: 'svm', name: 'Support Vector Machine', icon: Activity, description: 'Classifying medical images', inputs: ['Image URL'] },
@@ -66,18 +85,57 @@ export default function AlgorithmTest() {
     setInputs(prev => ({ ...prev, [name]: value }))
   }
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     
-    if (algorithm?.id === 'svm' && imageFile) {
+    if (algorithm?.id === 'linear-regression') {
+      try {
+        const transformedInputs = {
+          age: Number(inputs['Age']),
+          male: inputs['Male'] === 'true' ? 1 : 0,
+          currentSmoker: inputs['Current Smoker'] === 'true' ? 1 : 0,
+          cigsPerDay: Number(inputs['Cigarettes Per Day']),
+          BPMeds: inputs['BP Medications'] === 'true' ? 1 : 0,
+          diabetes: inputs['Diabetes'] === 'true' ? 1 : 0,
+          totChol: Number(inputs['Total Cholesterol']),
+          sysBP: Number(inputs['Systolic BP']),
+          diaBP: Number(inputs['Diastolic BP']),
+          BMI: Number(inputs['BMI']),
+          heartRate: Number(inputs['Heart Rate']),
+          glucose: Number(inputs['Glucose'])
+        }
+  
+        const response = await fetch(`${API_URL}/api/lr/predict`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ features: transformedInputs })
+        })
+  
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+  
+        const data = await response.json()
+        setResult(`Risk Level: ${data.risk_level} (Score: ${data.prediction.toFixed(3)})`)
+      } catch (error) {
+        console.error('Prediction error:', error)
+        setResult(`Error: ${error instanceof Error ? error.message : 'Error processing prediction'}`)
+      } finally {
+        setIsLoading(false)
+      }
+    } else if (algorithm?.id === 'svm' && imageFile) {
       try {
         const formData = new FormData()
         formData.append('image', imageFile)
 
         console.log('Sending file:', imageFile.name, imageFile.type)
         
-        const response = await fetch('http://127.0.0.1:5000/api/svm/predict', {
+        const response = await fetch(`${API_URL}/api/svm/predict`, {
           method: 'POST',
           body: formData
         })
@@ -111,7 +169,7 @@ export default function AlgorithmTest() {
 
         console.log('Sending data:', transformedInputs);
 
-        const response = await fetch('http://127.0.0.1:5000/api/knn/predict', {
+        const response = await fetch(`${API_URL}/api/knn/predict`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -265,7 +323,7 @@ export default function AlgorithmTest() {
                   {algorithm.inputs.map((input) => (
                     <div key={input} className="space-y-2">
                       <Label htmlFor={input} className="text-gray-700">{input}</Label>
-                      {['Gender', 'Hypertension', 'Heart Disease', 'Smoking History'].includes(input) ? (
+                      {['Gender', 'Hypertension', 'Heart Disease', 'Smoking History', 'Male', 'Current Smoker', 'BP Medications', 'Diabetes'].includes(input) ? (
                         <select
                           id={input}
                           value={inputs[input]}
@@ -273,6 +331,13 @@ export default function AlgorithmTest() {
                           required
                           className="bg-gray-50 hover:bg-gray-100 focus:bg-white w-full p-2 border border-gray-300 rounded-md"
                         >
+                          {['Male', 'Current Smoker', 'BP Medications', 'Diabetes'].includes(input) && (
+                            <>
+                              <option value="">Select {input}</option>
+                              <option value="true">Yes</option>
+                              <option value="false">No</option>
+                            </>
+                          )}
                           {input === 'Gender' && (
                             <>
                               <option value="">Select Gender</option>
