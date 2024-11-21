@@ -14,7 +14,7 @@ CORS(app)
 
 
 # SVM Model
-def load_model_and_data():
+def load_svm_model_and_data():
     # Load the trained SVM model and preprocessed data
     clf = pickle.load(open('./svm/pneumonia_svm_model.pkl', 'rb'))
     X_train = np.load('./svm/pneumonia_X_train.npy')
@@ -28,8 +28,8 @@ def load_model_and_data():
     
     return clf
 
-# Initialize model
-model = load_model_and_data()
+# Initialize SVM model
+svm_model = load_svm_model_and_data()
 
 @app.route('/api/svm/predict', methods=['POST'])
 def predict_svm():
@@ -53,7 +53,7 @@ def predict_svm():
         X = X.reshape(1, -1)
 
         # Make prediction
-        prediction = model.predict(X)[0]
+        prediction = svm_model.predict(X)[0]
         
         # Convert string prediction to numeric value if needed
         prediction_value = 1 if str(prediction).upper() == 'PNEUMONIA' else 0
@@ -73,14 +73,14 @@ def predict_svm():
 
 
 # KNN Model
-# Load saved objects
-model = joblib.load('knn/knn_model.pkl')
-label_encoders = joblib.load('knn/label_encoders.pkl')
-scaler = joblib.load('knn/scaler.pkl')
+def load_knn_model_and_data():
+    model = joblib.load('knn/knn_model.pkl')
+    label_encoders = joblib.load('knn/label_encoders.pkl')
+    scaler = joblib.load('knn/scaler.pkl')
+    return model, label_encoders, scaler
 
-# Print available classes for label encoders
-for key, encoder in label_encoders.items():
-    print(f"{key} classes:", encoder.classes_)
+# Initialize KNN model
+knn_model, label_encoders, scaler = load_knn_model_and_data()
 
 @app.route('/api/knn/predict', methods=['POST'])
 def predict_knn():
@@ -146,7 +146,7 @@ def predict_knn():
         app.logger.debug(f"Scaled input: {input_scaled}")
         
         # Make prediction
-        prediction = model.predict(input_scaled)
+        prediction = knn_model.predict(input_scaled)
         app.logger.debug(f"Prediction: {prediction}")
         
         prediction_result = "Diabetic" if prediction[0] == 1 else "Non-Diabetic"
