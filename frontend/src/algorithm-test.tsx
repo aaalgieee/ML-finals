@@ -19,7 +19,7 @@ const algorithms = [
     description: 'Predicting cardiovascular disease risk',
     inputs: [
       'Age',
-      'Male',
+      'Gender',  // Changed from 'Male' to 'Gender'
       'Current Smoker',
       'Cigarettes Per Day',
       'BP Medications',
@@ -36,21 +36,31 @@ const algorithms = [
   { id: 'knn', name: 'K-Nearest Neighbors', icon: Network, description: 'Identifying similar patient profiles', inputs: ['Gender', 'Age', 'Hypertension', 'Heart Disease', 'Smoking History', 'BMI', 'HbA1c Level', 'Blood Glucose Level'] },
   { id: 'svm', name: 'Support Vector Machine', icon: Activity, description: 'Classifying medical images', inputs: ['Image URL'] },
   { id: 'decision-tree', name: 'Decision Tree', icon: TreeDeciduous, description: 'Guiding treatment decisions', inputs: ['Age', 'Gender', 'Condition Severity'] },
-  { id: 'ann', name: 'Artificial Neural Network', icon: Brain, description: 'Predicting disease outbreaks', inputs: ['Location', 'Season', 'Population Density'] },
+  { 
+    id: 'ann', 
+    name: 'Artificial Neural Network', 
+    icon: Brain, 
+    description: 'Brain Tumor Classification using MRI Scans',  // Updated description
+    inputs: ['Image']  // Changed to only accept image input
+  },
 ]
 
+// Update the PredictionResponse type to include the new fields
 type PredictionResponse = {
   success: boolean;
   prediction: number;
   message: string;
-  raw_prediction: string;
+  confidence?: number;
+  raw_prediction?: string;
+  risk_level?: string;
+  tumor_region?: { x: number, y: number, width: number, height: number }; // Add this line
 }
 
 export default function AlgorithmTest() {
   const { id } = useParams<{ id: string }>()
   const [algorithm, setAlgorithm] = useState<typeof algorithms[0] | undefined>()
   const [inputs, setInputs] = useState<Record<string, string>>({})
-  const [result, setResult] = useState<string | null>(null)
+  const [result, setResult] = useState<string | JSX.Element | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -91,11 +101,58 @@ export default function AlgorithmTest() {
     e.preventDefault()
     setIsLoading(true)
     
-    if (algorithm?.id === 'linear-regression') {
+    if (algorithm?.id === 'ann' && imageFile) {
+      try {
+        const formData = new FormData()
+        formData.append('image', imageFile)
+        
+        const response = await fetch(`${API_URL}/api/ann/predict`, {
+          method: 'POST',
+          body: formData
+        })
+  
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+  
+        const data: PredictionResponse = await response.json()
+        setResult(
+          <div className="space-y-2">
+            <p className="font-semibold">Detected: {data.message}</p>
+            <p className="text-sm text-gray-600">
+              Confidence: {data.confidence ? data.confidence.toFixed(1) : 'N/A'}%
+            </p>
+            {imagePreview && data.tumor_region && data.message !== "No Tumor" && (
+              <div className="relative inline-block w-full">
+                <img
+                  src={imagePreview}
+                  alt="MRI Scan"
+                  className="w-full max-h-[800px] mx-auto object-contain"  // Increased to 800px
+                />
+                <div
+                  className="absolute border-2 border-red-500"
+                  style={{
+                    left: `${data.tumor_region.x}%`,
+                    top: `${data.tumor_region.y}%`,
+                    width: `${data.tumor_region.width}%`,
+                    height: `${data.tumor_region.height}%`,
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )
+      } catch (error) {
+        console.error('Upload error:', error)
+        setResult(`Error: ${error instanceof Error ? error.message : 'Error processing image'}`)
+      } finally {
+        setIsLoading(false)
+      }
+    } else if (algorithm?.id === 'linear-regression') {
       try {
         const transformedInputs = {
           age: Number(inputs['Age']),
-          male: inputs['Male'] === 'true' ? 1 : 0,
+          male: inputs['Gender'] === 'Male' ? 1 : 0,  // Convert Gender to binary
           currentSmoker: inputs['Current Smoker'] === 'true' ? 1 : 0,
           cigsPerDay: Number(inputs['Cigarettes Per Day']),
           BPMeds: inputs['BP Medications'] === 'true' ? 1 : 0,
@@ -120,8 +177,18 @@ export default function AlgorithmTest() {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
   
-        const data = await response.json()
-        setResult(`Risk Level: ${data.risk_level} (Score: ${data.prediction.toFixed(3)})`)
+        const data: PredictionResponse = await response.json()
+        if (data.success) {
+          setResult(
+            <div className="space-y-2">
+              <p className="font-semibold">{data.risk_level}</p>
+              <p>{data.message}</p>
+              <p className="text-sm text-gray-600">Risk Score: {data.prediction.toFixed(1)}%</p>
+            </div>
+          )
+        } else {
+          throw new Error('Prediction failed')
+        }
       } catch (error) {
         console.error('Prediction error:', error)
         setResult(`Error: ${error instanceof Error ? error.message : 'Error processing prediction'}`)
@@ -147,7 +214,7 @@ export default function AlgorithmTest() {
         const data: PredictionResponse = await response.json()
         console.log('Response:', data)
         
-        setResult(`Classification: ${data.message}`)
+        setResult(`Classification: ${data.message} ${data.confidence !== undefined ? `(Confidence: ${data.confidence.toFixed(1)}%)` : ''}`)
       } catch (error) {
         console.error('Upload error:', error)
         setResult(`Error: ${error instanceof Error ? error.message : 'Error processing image'}`)
@@ -275,7 +342,7 @@ export default function AlgorithmTest() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {algorithm.id === 'svm' ? (
+              {(algorithm.id === 'svm' || algorithm.id === 'ann') ? (
                 <div className="space-y-4">
                   <div
                     {...getRootProps()}
@@ -301,7 +368,7 @@ export default function AlgorithmTest() {
                       <img
                         src={imagePreview}
                         alt="Preview"
-                        className="max-h-64 mx-auto rounded-lg shadow-md"
+                        className="max-h-64 mx-auto rounded-lg shadow-md object-contain"  // Changed back to max-h-64
                       />
                       <button
                         type="button"
@@ -323,7 +390,7 @@ export default function AlgorithmTest() {
                   {algorithm.inputs.map((input) => (
                     <div key={input} className="space-y-2">
                       <Label htmlFor={input} className="text-gray-700">{input}</Label>
-                      {['Gender', 'Hypertension', 'Heart Disease', 'Smoking History', 'Male', 'Current Smoker', 'BP Medications', 'Diabetes'].includes(input) ? (
+                      {['Gender', 'Hypertension', 'Heart Disease', 'Smoking History', 'Current Smoker', 'BP Medications', 'Diabetes'].includes(input) ? (
                         <select
                           id={input}
                           value={inputs[input]}
@@ -331,7 +398,7 @@ export default function AlgorithmTest() {
                           required
                           className="bg-gray-50 hover:bg-gray-100 focus:bg-white w-full p-2 border border-gray-300 rounded-md"
                         >
-                          {['Male', 'Current Smoker', 'BP Medications', 'Diabetes'].includes(input) && (
+                          {['Current Smoker', 'BP Medications', 'Diabetes'].includes(input) && (
                             <>
                               <option value="">Select {input}</option>
                               <option value="true">Yes</option>
@@ -390,7 +457,7 @@ export default function AlgorithmTest() {
                 className={`w-full transition-all duration-200 ${
                   isLoading ? 'bg-blue-500' : 'bg-blue-600 hover:bg-blue-700'
                 }`}
-                disabled={isLoading || (algorithm.id === 'svm' && !imageFile)}
+                disabled={isLoading || ((algorithm.id === 'svm' || algorithm.id === 'ann') && !imageFile)}
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center space-x-2">
