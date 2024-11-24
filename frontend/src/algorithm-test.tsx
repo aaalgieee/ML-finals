@@ -16,33 +16,156 @@ const algorithms = [
     id: 'linear-regression', 
     name: 'Linear Regression', 
     icon: LineChart, 
-    description: 'Predicting cardiovascular disease risk',
+    description: 'Calculate your risk of developing hypertension using advanced prediction models',
     inputs: [
-      'Age',
-      'Gender',  // Changed from 'Male' to 'Gender'
-      'Current Smoker',
-      'Cigarettes Per Day',
-      'BP Medications',
-      'Diabetes',
-      'Total Cholesterol',
-      'Systolic BP',
-      'Diastolic BP',
-      'BMI',
-      'Heart Rate',
-      'Glucose'
+      { name: 'Age', type: 'number', min: 0, max: 120, placeholder: 'Enter your age', help: 'Your current age in years' },
+      { name: 'Gender', type: 'select', options: [
+        { value: 'Male', label: 'Male' },
+        { value: 'Female', label: 'Female' }
+      ]},
+      { name: 'Current Smoker', type: 'select', options: [
+        { value: 'true', label: 'Yes' },
+        { value: 'false', label: 'No' }
+      ]},
+      { name: 'Cigarettes Per Day', type: 'number', min: 0, max: 100, placeholder: 'Number of cigarettes', help: 'Average number of cigarettes smoked per day' },
+      { name: 'BP Medications', type: 'select', options: [
+        { value: 'true', label: 'Yes' },
+        { value: 'false', label: 'No' }
+      ]},
+      { name: 'Diabetes', type: 'select', options: [
+        { value: 'true', label: 'Yes' },
+        { value: 'false', label: 'No' }
+      ]},
+      { name: 'Total Cholesterol', type: 'number', min: 0, max: 600, placeholder: 'Cholesterol level', help: 'Total cholesterol in mg/dL' },
+      { name: 'Systolic BP', type: 'number', min: 0, max: 300, placeholder: 'Systolic blood pressure', help: 'Upper blood pressure number in mmHg' },
+      { name: 'Diastolic BP', type: 'number', min: 0, max: 200, placeholder: 'Diastolic blood pressure', help: 'Lower blood pressure number in mmHg' },
+      { name: 'BMI', type: 'number', min: 0, max: 100, step: 0.1, placeholder: 'Body Mass Index', help: 'Your Body Mass Index (weight/height²)' },
+      { name: 'Heart Rate', type: 'number', min: 0, max: 250, placeholder: 'Heart rate', help: 'Resting heart rate in beats per minute' },
+      { name: 'Glucose', type: 'number', min: 0, max: 500, placeholder: 'Blood glucose', help: 'Blood glucose level in mg/dL' }
     ]
   },
-  { id: 'naive-bayes', name: 'Naive Bayes', icon: Brain, description: 'Classifying patient symptoms for diagnosis', inputs: ['Symptom 1', 'Symptom 2', 'Symptom 3'] },
-  { id: 'knn', name: 'K-Nearest Neighbors', icon: Network, description: 'Identifying similar patient profiles', inputs: ['Gender', 'Age', 'Hypertension', 'Heart Disease', 'Smoking History', 'BMI', 'HbA1c Level', 'Blood Glucose Level'] },
-  { id: 'svm', name: 'Support Vector Machine', icon: Activity, description: 'Classifying medical images', inputs: ['Image URL'] },
-  { id: 'decision-tree', name: 'Decision Tree', icon: TreeDeciduous, description: 'Guiding treatment decisions', inputs: ['Age', 'Gender', 'Condition Severity'] },
+  { 
+    id: 'naive-bayes', 
+    name: 'Naive Bayes', 
+    icon: Brain, 
+    description: 'Assess your heart disease risk with our intelligent diagnostic tool',
+    inputs: [
+      { name: 'age', label: 'Age', type: 'number', min: 0, max: 120, placeholder: 'Enter your age', help: 'Your current age in years' },
+      { name: 'sex', label: 'Gender', type: 'select', options: [
+        { value: '1', label: 'Female' },
+        { value: '0', label: 'Male' }
+      ], help: 'Select your gender' },
+      { name: 'cp', label: 'Chest Pain Type', type: 'select', options: [
+        { value: '0', label: 'Typical Angina' },
+        { value: '1', label: 'Atypical Angina' },
+        { value: '2', label: 'Non-anginal Pain' },
+        { value: '3', label: 'Asymptomatic' }
+      ], help: 'Type of chest pain you experience' },
+      { name: 'trestbps', label: 'Resting Blood Pressure', type: 'number', min: 0, max: 300, placeholder: 'Enter BP value', help: 'Blood pressure (in mm Hg) while resting', unit: 'mmHg' },
+      { name: 'chol', label: 'Cholesterol Level', type: 'number', min: 0, max: 600, placeholder: 'Enter cholesterol', help: 'Serum cholesterol in mg/dl', unit: 'mg/dl' },
+      { name: 'fbs', label: 'Fasting Blood Sugar > 120 mg/dl', type: 'select', options: [
+        { value: '1', label: 'Yes' },
+        { value: '0', label: 'No' }
+      ]},
+      { name: 'restecg', label: 'Resting ECG Results', type: 'select', options: [
+        { value: '0', label: 'Normal' },
+        { value: '1', label: 'ST-T Wave Abnormality' },
+        { value: '2', label: 'Left Ventricular Hypertrophy' }
+      ]},
+      { name: 'thalach', label: 'Maximum Heart Rate', type: 'number', min: 0, max: 250 },
+      { name: 'exang', label: 'Exercise Induced Angina', type: 'select', options: [
+        { value: '1', label: 'Yes' },
+        { value: '0', label: 'No' }
+      ]},
+      { name: 'oldpeak', label: 'ST Depression', type: 'number', min: 0, max: 10, step: 0.1 },
+      { name: 'slope', label: 'Slope of Peak Exercise ST', type: 'select', options: [
+        { value: '0', label: 'Upsloping' },
+        { value: '1', label: 'Flat' },
+        { value: '2', label: 'Downsloping' }
+      ]},
+      { name: 'ca', label: 'Number of Major Vessels', type: 'select', options: [
+        { value: '0', label: '0' },
+        { value: '1', label: '1' },
+        { value: '2', label: '2' },
+        { value: '3', label: '3' },
+        { value: '4', label: '4' }
+      ]},
+      { name: 'thal', label: 'Thalium Stress Test', type: 'select', options: [
+        { value: '0', label: 'Normal' },
+        { value: '1', label: 'Fixed Defect' },
+        { value: '2', label: 'Reversible Defect' },
+        { value: '3', label: 'Not Described' }
+      ]}
+    ]
+  },
+  { 
+    id: 'knn', 
+    name: 'K-Nearest Neighbors', 
+    icon: Network, 
+    description: 'Screen for diabetes risk based on your health metrics',
+    inputs: [
+      { name: 'Gender', type: 'select', options: [
+        { value: 'Male', label: 'Male' },
+        { value: 'Female', label: 'Female' }
+      ], help: 'Select your gender' },
+      { name: 'Age', type: 'number', min: 0, max: 120, placeholder: 'Enter your age', help: 'Your current age in years' },
+      { name: 'Hypertension', type: 'select', options: [
+        { value: 'true', label: 'Yes' },
+        { value: 'false', label: 'No' }
+      ], help: 'Do you have hypertension?' },
+      { name: 'Heart Disease', type: 'select', options: [
+        { value: 'true', label: 'Yes' },
+        { value: 'false', label: 'No' }
+      ], help: 'Do you have any heart conditions?' },
+      { name: 'Smoking History', type: 'select', options: [
+        { value: 'never', label: 'Never Smoked' },
+        { value: 'current', label: 'Current Smoker' },
+        { value: 'former', label: 'Former Smoker' },
+        { value: 'not current', label: 'Not Current Smoker' }
+      ], help: 'Your smoking history' },
+      { name: 'BMI', type: 'number', min: 10, max: 50, step: 0.1, placeholder: 'Enter your BMI', help: 'Body Mass Index', unit: 'kg/m²' },
+      { name: 'HbA1c Level', type: 'number', min: 3, max: 9, step: 0.1, placeholder: 'Enter HbA1c level', help: 'Glycated hemoglobin level', unit: '%' },
+      { name: 'Blood Glucose Level', type: 'number', min: 70, max: 300, placeholder: 'Enter glucose level', help: 'Random blood glucose level', unit: 'mg/dL' }
+    ]
+  },
+  { 
+    id: 'svm', 
+    name: 'Support Vector Machine', 
+    icon: Activity, 
+    description: 'Analyze chest X-rays to detect signs of pneumonia',
+    inputs: [{ 
+      type: 'image',
+      help: 'Upload a clear chest X-ray image for pneumonia analysis',
+      accept: ['image/jpeg', 'image/png'],
+      maxSize: 10 * 1024 * 1024 // 10MB
+    }]
+  },
+  { 
+    id: 'decision-tree', 
+    name: 'Decision Tree', 
+    icon: TreeDeciduous, 
+    description: 'Evaluate maternal health risks during pregnancy',
+    inputs: [
+      { name: 'Age', type: 'number', min: 13, max: 70, placeholder: 'Enter age', help: 'Mother\'s age in years' },
+      { name: 'Systolic BP', type: 'number', min: 70, max: 180, placeholder: 'Enter systolic BP', help: 'Upper blood pressure number', unit: 'mmHg' },
+      { name: 'Diastolic BP', type: 'number', min: 40, max: 120, placeholder: 'Enter diastolic BP', help: 'Lower blood pressure number', unit: 'mmHg' },
+      { name: 'Blood Sugar', type: 'number', min: 30, max: 300, placeholder: 'Enter blood sugar', help: 'Blood glucose level', unit: 'mg/dL' },
+      { name: 'Body Temperature', type: 'number', min: 35, max: 42, step: 0.1, placeholder: 'Enter temperature', help: 'Body temperature', unit: '°C' },
+      { name: 'Heart Rate', type: 'number', min: 40, max: 200, placeholder: 'Enter heart rate', help: 'Heart beats per minute', unit: 'bpm' }
+    ]
+  },
   { 
     id: 'ann', 
     name: 'Artificial Neural Network', 
     icon: Brain, 
-    description: 'Brain Tumor Classification using MRI Scans',  // Updated description
-    inputs: ['Image']  // Changed to only accept image input
-  },
+    description: 'Detect and locate brain tumors in MRI scans with precision',
+    inputs: [{ 
+      type: 'image',
+      help: 'Upload a clear MRI scan for tumor detection',
+      accept: ['image/jpeg', 'image/png'],
+      maxSize: 10 * 1024 * 1024 // 10MB
+    }]
+  }
 ]
 
 // Update the PredictionResponse type to include the new fields
@@ -54,6 +177,16 @@ type PredictionResponse = {
   raw_prediction?: string;
   risk_level?: string;
   tumor_region?: { x: number, y: number, width: number, height: number }; // Add this line
+  risk_factors?: string[];
+  probabilities?: {
+    low_risk: number;
+    high_risk: number;
+  };
+  details?: {
+    systolic_bp: number;
+    cholesterol: number;
+    max_heart_rate: number;
+  };
 }
 
 export default function AlgorithmTest() {
@@ -64,13 +197,16 @@ export default function AlgorithmTest() {
   const [isLoading, setIsLoading] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [scatterData, setScatterData] = useState<any>(null)
 
   useEffect(() => {
     const foundAlgorithm = algorithms.find(algo => algo.id === id)
     setAlgorithm(foundAlgorithm)
     if (foundAlgorithm) {
-      const initialInputs = foundAlgorithm.inputs.reduce((acc, input) => ({ ...acc, [input]: '' }), {})
+      const initialInputs = foundAlgorithm.inputs.reduce((acc, input) => {
+        if (typeof input === 'string') return { ...acc, [input]: '' };
+        if ('name' in input) return { ...acc, [input.name]: '' };
+        return acc;
+      }, {})
       setInputs(initialInputs)
     }
   }, [id])
@@ -120,17 +256,18 @@ export default function AlgorithmTest() {
           <div className="space-y-2">
             <p className="font-semibold">Detected: {data.message}</p>
             <p className="text-sm text-gray-600">
-              Confidence: {data.confidence ? data.confidence.toFixed(1) : 'N/A'}%
+              Confidence: {data.confidence ? `${data.confidence.toFixed(1)}%` : 'N/A'}
             </p>
             {imagePreview && data.tumor_region && data.message !== "No Tumor" && (
-              <div className="relative inline-block w-full">
+              <div className="relative inline-block w-full" style={{ maxHeight: '800px', overflow: 'hidden' }}>
                 <img
                   src={imagePreview}
                   alt="MRI Scan"
-                  className="w-full max-h-[800px] mx-auto object-contain"  // Increased to 800px
+                  className="w-full object-contain"
+                  style={{ maxHeight: '800px' }}
                 />
                 <div
-                  className="absolute border-2 border-red-500"
+                  className="absolute border-2 border-red-500 animate-pulse"
                   style={{
                     left: `${data.tumor_region.x}%`,
                     top: `${data.tumor_region.y}%`,
@@ -252,48 +389,161 @@ export default function AlgorithmTest() {
         console.log('Received data:', data);
 
         if (data.prediction) {
-          setResult(`Prediction: ${data.prediction} (Risk of Diabetes)`)
-          
-          if (data.scatter_plot_data) {
-            const scatterPlotData = {
-              datasets: [
-                {
-                  label: 'Patient Data',
-                  data: data.scatter_plot_data || [],
-                  backgroundColor: data.prediction === 'Diabetic' ? 'red' : 'green',
-                  pointRadius: 8,
-                  pointStyle: 'circle',
-                  borderColor: 'black',
-                  borderWidth: 1
-                }
-              ],
-              options: {
-                plugins: {
-                  title: {
-                    display: true,
-                    text: 'Patient Classification'
-                  },
-                  legend: {
-                    display: true,
-                    position: 'top'
-                  }
-                },
-                scales: {
-                  x: { 
-                    title: { display: true, text: 'Age' },
-                    grid: { display: true }
-                  },
-                  y: { 
-                    title: { display: true, text: 'BMI' },
-                    grid: { display: true }
-                  }
-                }
-              }
-            }
-            setScatterData(scatterPlotData)
-          }
+          const riskLevel = data.prediction === 'Diabetic' ? 'High Risk' : 'Low Risk'
+          setResult(
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <p className="text-xl font-bold text-gray-900">
+                  {riskLevel} of Diabetes
+                </p>
+                <p className="text-gray-600 mt-1">{data.message}</p>
+                {data.confidence && (
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className={`h-2.5 rounded-full ${
+                          data.prediction === 'Diabetic' ? 'bg-red-600' : 'bg-green-500'
+                        }`}
+                        style={{ width: `${data.confidence}%` }}
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Confidence: {data.confidence.toFixed(1)}%
+                    </p>
+                  </div>
+                )}
+              </div>
+              {data.scatter_plot_data && (
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <Scatter 
+                    data={{
+                      datasets: [{
+                        label: 'Patient Data',
+                        data: data.scatter_plot_data,
+                        backgroundColor: data.prediction === 'Diabetic' ? 'rgba(255, 99, 132, 0.8)' : 'rgba(75, 192, 192, 0.8)',
+                        pointRadius: 8
+                      }]
+                    }}
+                    options={{
+                      scales: {
+                        x: { title: { display: true, text: 'Age' } },
+                        y: { title: { display: true, text: 'BMI' } }
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )
         } else {
           setResult('Error: Could not generate prediction')
+        }
+      } catch (error) {
+        console.error('Prediction error:', error)
+        setResult(`Error: ${error instanceof Error ? error.message : 'Error processing prediction'}`)
+      } finally {
+        setIsLoading(false)
+      }
+    } else if (algorithm?.id === 'decision-tree') {
+      try {
+        const transformedInputs = {
+          age: Number(inputs['Age']),
+          systolicBP: Number(inputs['Systolic BP']),
+          diastolicBP: Number(inputs['Diastolic BP']),
+          bs: Number(inputs['Blood Sugar']),
+          bodyTemp: Number(inputs['Body Temperature']),
+          heartRate: Number(inputs['Heart Rate'])
+        }
+
+        const response = await fetch(`${API_URL}/api/dt/predict`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ features: transformedInputs })
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data: PredictionResponse = await response.json()
+        if (data.success) {
+          setResult(
+            <div className="space-y-2">
+              <p className="font-semibold">Risk Level: {data.risk_level}</p>
+              <p className="text-sm text-gray-600">{data.message}</p>
+              <p className="text-sm text-gray-600">
+                Confidence: {data.confidence ? data.confidence.toFixed(1) : 'N/A'}%
+              </p>
+            </div>
+          )
+        } else {
+          throw new Error('Prediction failed')
+        }
+      } catch (error) {
+        console.error('Prediction error:', error)
+        setResult(`Error: ${error instanceof Error ? error.message : 'Error processing prediction'}`)
+      } finally {
+        setIsLoading(false)
+      }
+    } else if (algorithm?.id === 'naive-bayes') {
+      try {
+        const transformedInputs = {
+          age: Number(inputs['age']),
+          sex: Number(inputs['sex']),
+          cp: Number(inputs['cp']),
+          trestbps: Number(inputs['trestbps']),
+          chol: Number(inputs['chol']),
+          fbs: Number(inputs['fbs']),
+          restecg: Number(inputs['restecg']),
+          thalach: Number(inputs['thalach']),
+          exang: Number(inputs['exang']),
+          oldpeak: Number(inputs['oldpeak']),
+          slope: Number(inputs['slope']),
+          ca: Number(inputs['ca']),
+          thal: Number(inputs['thal'])
+        }
+    
+        const response = await fetch(`${API_URL}/api/nb/predict`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ features: transformedInputs })
+        })
+    
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+    
+        const data: PredictionResponse = await response.json()
+        if (data.success) {
+          setResult(
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <p className="text-xl font-bold text-gray-900">
+                  {data.risk_level} Risk Level
+                </p>
+                <p className="text-gray-600 mt-1">{data.message}</p>
+                {data.probabilities && (
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Low Risk Probability</p>
+                      <p className="text-lg font-medium">{(data.probabilities.low_risk * 100).toFixed(1)}%</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">High Risk Probability</p>
+                      <p className="text-lg font-medium">{(data.probabilities.high_risk * 100).toFixed(1)}%</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* Rest of the existing result display */}
+            </div>
+          )
+        } else {
+          throw new Error('Prediction failed')
         }
       } catch (error) {
         console.error('Prediction error:', error)
@@ -387,69 +637,60 @@ export default function AlgorithmTest() {
                 </div>
               ) : (
                 <>
-                  {algorithm.inputs.map((input) => (
-                    <div key={input} className="space-y-2">
-                      <Label htmlFor={input} className="text-gray-700">{input}</Label>
-                      {['Gender', 'Hypertension', 'Heart Disease', 'Smoking History', 'Current Smoker', 'BP Medications', 'Diabetes'].includes(input) ? (
-                        <select
-                          id={input}
-                          value={inputs[input]}
-                          onChange={(e) => handleInputChange(input, e.target.value)}
-                          required
-                          className="bg-gray-50 hover:bg-gray-100 focus:bg-white w-full p-2 border border-gray-300 rounded-md"
-                        >
-                          {['Current Smoker', 'BP Medications', 'Diabetes'].includes(input) && (
-                            <>
-                              <option value="">Select {input}</option>
-                              <option value="true">Yes</option>
-                              <option value="false">No</option>
-                            </>
-                          )}
-                          {input === 'Gender' && (
-                            <>
-                              <option value="">Select Gender</option>
-                              <option value="Male">Male</option>
-                              <option value="Female">Female</option>
-                            </>
-                          )}
-                          {input === 'Hypertension' && (
-                            <>
-                              <option value="">Have Hypertension?</option>
-                              <option value="true">Yes</option>
-                              <option value="false">No</option>
-                            </>
-                          )}
-                          {input === 'Heart Disease' && (
-                            <>
-                              <option value="">Have Heart Disease?</option>
-                              <option value="true">Yes</option>
-                              <option value="false">No</option>
-                            </>
-                          )}
-                          {input === 'Smoking History' && (
-                            <>
-                              <option value="">Smoking History</option>
-                              <option value="never">never</option>
-                              <option value="former">former</option>
-                              <option value="current">current</option>
-                              <option value="not current">not current</option>
-                              <option value="No Info">No Info</option>  {/* Changed from "no info" to "No Info" */}
-                              <option value="ever">ever</option>
-                            </>
-                          )}
-                        </select>
-                      ) : (
-                        <Input
-                          id={input}
-                          value={inputs[input]}
-                          onChange={(e) => handleInputChange(input, e.target.value)}
-                          required
-                          className="bg-gray-50 hover:bg-gray-100 focus:bg-white"
-                          placeholder={`Enter ${input.toLowerCase()}`}
-                        />
-                      )}
-                    </div>
-                  ))}
+                  {algorithm.inputs.map((input) => {
+                    if ('type' in input && input.type === 'image') {
+                      return null; // Skip image inputs as they're handled separately
+                    }
+                    
+                    const inputName = typeof input === 'string' ? input : 'name' in input ? input.name : '';
+                    const inputLabel = typeof input === 'string' ? input : 'label' in input ? input.label : 'name' in input ? input.name : '';
+                    
+                    return (
+                      <div key={inputName} className="space-y-2">
+                        <Label htmlFor={inputName} className="text-gray-700">
+                          {inputLabel}
+                        </Label>
+                        {typeof input !== 'string' && 'type' in input && input.type === 'select' && 'options' in input ? (
+                          <select
+                            id={inputName}
+                            value={inputs[inputName]}
+                            onChange={(e) => handleInputChange(inputName, e.target.value)}
+                            required
+                            className="bg-gray-50 hover:bg-gray-100 focus:bg-white w-full p-2 border border-gray-300 rounded-md"
+                          >
+                            <option value="">Select {inputLabel}</option>
+                            {input.options?.map((option: { value: string; label: string }) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : typeof input !== 'string' ? (
+                          <Input
+                            id={inputName}
+                            type={'type' in input ? input.type : 'text'}
+                            min={'min' in input ? input.min : undefined}
+                            max={'max' in input ? input.max : undefined}
+                            step={'step' in input ? input.step : undefined}
+                            value={inputs[inputName]}
+                            onChange={(e) => handleInputChange(inputName, e.target.value)}
+                            required
+                            className="bg-gray-50 hover:bg-gray-100 focus:bg-white"
+                            placeholder={`Enter ${inputLabel.toLowerCase()}`}
+                          />
+                        ) : (
+                          <Input
+                            id={input}
+                            value={inputs[input]}
+                            onChange={(e) => handleInputChange(input, e.target.value)}
+                            required
+                            className="bg-gray-50 hover:bg-gray-100 focus:bg-white"
+                            placeholder={`Enter value`}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 </>
               )}
               <Button 
@@ -477,12 +718,7 @@ export default function AlgorithmTest() {
             {result && (
               <div className="mt-6 p-4 bg-blue-50 rounded-md">
                 <h3 className="font-semibold text-lg mb-2 text-gray-900">Result</h3>
-                <p className="text-gray-800 font-medium">{result}</p>
-                {scatterData && (
-                  <div className="mt-4">
-                    <Scatter data={scatterData} />
-                  </div>
-                )}
+                <div className="text-gray-800 font-medium">{result}</div>
               </div>
             )}
           </CardContent>
