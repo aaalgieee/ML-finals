@@ -178,55 +178,97 @@ def predict_knn():
 
 
 #Linear Regression Model
-lr_model = joblib.load('./lr/lr.pkl')
+try:
+    lr_model = joblib.load('./lr/hypertension_model.pkl')
+    lr_scaler = joblib.load('./lr/scaler.pkl')  # Add scaler if available
+except Exception as e:
+    app.logger.error(f"Error loading Linear Regression model: {str(e)}")
+    lr_model = None
+    lr_scaler = None
 
 @app.route('/api/lr/predict', methods=['POST'])
 def predict_lr():
     try:
-        data = request.get_json(force=True)
-        app.logger.debug(f"Received data: {data}")
-        
-        features = data['features']
-        input_data = pd.DataFrame([{
-            'male': 1 if features['male'] == 1 else 0,
-            'age': features['age'],
-            'currentSmoker': features['currentSmoker'],
-            'cigsPerDay': features['cigsPerDay'],
-            'BPMeds': features['BPMeds'],
-            'diabetes': features['diabetes'],
-            'totChol': features['totChol'],
-            'sysBP': features['sysBP'],
-            'diaBP': features['diaBP'],
-            'BMI': features['BMI'],
-            'heartRate': features['heartRate'],
-            'glucose': features['glucose']
-        }])
+        if lr_model is None:
+            raise ValueError("Model not properly loaded")
 
-        # Make prediction
-        prediction = lr_model.predict(input_data)[0]
-        risk_percentage = float(prediction * 100)
+        data = request.get_json(force=True)
+        features = data['features']
         
-        # Create a friendly risk assessment
+        # Create DataFrame with features in exact training order
+        input_data = pd.DataFrame([
+            [
+                features['age'],
+                features['male'],
+                features['currentSmoker'],
+                features['cigsPerDay'],
+                features['BPMeds'],
+                features['diabetes'],
+                features['totChol'],
+                features['sysBP'],
+                features['diaBP'],
+                features['BMI'],
+                features['heartRate'],
+                features['glucose']
+            ]
+        ], columns=[
+            'age', 'male', 'currentSmoker', 'cigsPerDay', 'BPMeds', 'diabetes', 
+            'totChol', 'sysBP', 'diaBP', 'BMI', 'heartRate', 'glucose'
+        ])
+
+        app.logger.debug(f"Input data with training order: {input_data.columns.tolist()}")
+
+        # Scale the input data if scaler is available
+        if lr_scaler is not None:
+            input_scaled = lr_scaler.transform(input_data)
+        else:
+            input_scaled = input_data
+
+        app.logger.debug(f"Scaled input data: {input_scaled}")
+
+        # Make prediction and apply sigmoid transformation
+        raw_prediction = lr_model.predict(input_scaled)[0]
+        risk_percentage = 100 / (1 + np.exp(-raw_prediction))  # Sigmoid transformation
+        risk_percentage = float(min(100, max(0, risk_percentage)))  # Clamp between 0 and 100
+        
+        # Updated risk thresholds and messages
         if risk_percentage < 25:
             risk_level = "Low Risk"
-            message = "Your cardiovascular disease risk appears to be low."
+            message = "Your cardiovascular disease risk appears to be low. Maintain a healthy lifestyle."
         elif risk_percentage < 50:
             risk_level = "Moderate Risk"
-            message = "You have a moderate risk of cardiovascular disease."
+            message = "You have a moderate risk of cardiovascular disease. Consider lifestyle improvements."
         elif risk_percentage < 75:
             risk_level = "High Risk"
-            message = "You have an elevated risk of cardiovascular disease."
+            message = "You have an elevated risk of cardiovascular disease. Consult with a healthcare provider."
         else:
             risk_level = "Very High Risk"
-            message = "Your cardiovascular disease risk is significantly elevated."
+            message = "Your cardiovascular disease risk is significantly elevated. Immediate medical consultation recommended."
+
+        # Add risk factors analysis
+        risk_factors = []
+        if features['age'] > 55:
+            risk_factors.append("Age above 55")
+        if features['sysBP'] > 140:
+            risk_factors.append("High blood pressure")
+        if features['totChol'] > 200:
+            risk_factors.append("High cholesterol")
+        if features['currentSmoker'] == 1:
+            risk_factors.append("Current smoker")
+        if features['diabetes'] == 1:
+            risk_factors.append("Diabetes")
         
         return jsonify({
             'success': True,
             'prediction': risk_percentage,
             'risk_level': risk_level,
-            'message': message
+            'message': message,
+            'risk_factors': risk_factors
         })
 
+    except ValueError as ve:
+        app.logger.error(f"Validation error: {str(ve)}")
+        return jsonify({'success': False, 'error': str(ve)}), 400
     except Exception as e:
         app.logger.error(f"Error processing request: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
@@ -329,100 +371,118 @@ def predict_ann():
 
 
 # Decision Tree Model
+# Define risk levels and messages with correct mapping
+risk_levels = {
+    0: "Low Risk",
+    1: "Mid Risk",  # Changed from "Moderate Risk" to "Mid Risk" to match CSV
+    2: "High Risk"
+}
+
+risk_messages = {
+    "Low Risk": "Normal pregnancy indicators. Continue regular check-ups.",
+    "Mid Risk": "Some concerning indicators. Increased monitoring recommended.",  # Updated message
+    "High Risk": "Critical indicators detected. Immediate medical attention required."
+}
+
 def load_dt_model():
     try:
         model = joblib.load('./dt/dt_model.pkl')
-        label_encoder = joblib.load('./dt/label_encoder.pkl')  # Fixed: using label_encoder
-        return model, label_encoder
+        scaler = joblib.load('./dt/scaler.pkl')
+        return model, scaler
     except Exception as e:
         app.logger.error(f"Error loading decision tree model: {str(e)}")
         raise
 
-# Initialize Decision Tree model
-dt_model, dt_label_encoder = load_dt_model()  # Now correctly unpacking model and label_encoder
+# Initialize Decision Tree model and scaler
+dt_model, dt_scaler = load_dt_model()
 
 @app.route('/api/dt/predict', methods=['POST'])
 def predict_dt():
     try:
         data = request.get_json(force=True)
-        app.logger.debug(f"Received data for DT prediction: {data}")
-        
         features = data['features']
         
-        # Create input DataFrame with correct column names matching training data
+        # Create input DataFrame with proper types
         input_data = pd.DataFrame([{
-            'Age': features['age'],
-            'SystolicBP': features['systolicBP'],
-            'DiastolicBP': features['diastolicBP'],
-            'BS': features['bs'],
-            'BodyTemp': features['bodyTemp'],
-            'HeartRate': features['heartRate']
+            'Age': int(features['age']),
+            'SystolicBP': int(features['systolicBP']),
+            'DiastolicBP': int(features['diastolicBP']),
+            'BS': float(features['bs']),
+            'BodyTemp': float(features['bodyTemp']),
+            'HeartRate': int(features['heartRate'])
         }])
-        
-        app.logger.debug(f"Input data shape: {input_data.shape}")
-        app.logger.debug(f"Input data: {input_data}")
 
-        # Input validation with updated column names
-        if not (13 <= input_data['Age'].iloc[0] <= 70):
-            raise ValueError("Age must be between 13 and 70")
-        if not (70 <= input_data['SystolicBP'].iloc[0] <= 180):
-            raise ValueError("Systolic BP must be between 70 and 180 mmHg")
-        if not (40 <= input_data['DiastolicBP'].iloc[0] <= 120):
-            raise ValueError("Diastolic BP must be between 40 and 120 mmHg")
-        if not (30 <= input_data['BS'].iloc[0] <= 300):
-            raise ValueError("Blood sugar must be between 30 and 300 mg/dL")
-        if not (35 <= input_data['BodyTemp'].iloc[0] <= 42):
-            raise ValueError("Body temperature must be between 35°C and 42°C")
-        if not (40 <= input_data['HeartRate'].iloc[0] <= 200):
-            raise ValueError("Heart rate must be between 40 and 200 bpm")
-
-        try:
-            # Make prediction with correct column names
-            prediction = dt_model.predict(input_data)[0]
-            prediction_proba = dt_model.predict_proba(input_data)[0]
-            confidence = float(max(prediction_proba) * 100)
-        except Exception as pred_error:
-            app.logger.error(f"Prediction error: {pred_error}")
-            raise ValueError("Error in making prediction. Model may need retraining.")
-
-        # Map risk levels
-        risk_levels = {
-            0: "Low Risk",
-            1: "Mid Risk",
-            2: "High Risk"
+        # Validate inputs with updated ranges based on CSV data
+        validation_ranges = {
+            'Age': (13, 70),
+            'SystolicBP': (70, 180),
+            'DiastolicBP': (40, 120),
+            'BS': (6.0, 19.0),
+            'BodyTemp': (97.0, 103.0),
+            'HeartRate': (40, 200)
         }
-        
-        risk_messages = {
-            "Low Risk": "Normal pregnancy indicators. Continue regular check-ups.",
-            "Mid Risk": "Some concerning indicators. Increased monitoring recommended.",
-            "High Risk": "Critical indicators detected. Immediate medical attention required."
-        }
-        
-        risk_level = risk_levels.get(prediction, "Unknown Risk")
-        message = risk_messages.get(risk_level, "Unable to determine risk level")
 
-        app.logger.debug(f"Prediction successful: {risk_level} with {confidence}% confidence")
+        for column, (min_val, max_val) in validation_ranges.items():
+            if not (min_val <= input_data[column].iloc[0] <= max_val):
+                raise ValueError(f"{column} must be between {min_val} and {max_val}")
+
+        # Scale features
+        scaled_features = dt_scaler.transform(input_data)
+        
+        # Make prediction
+        prediction = dt_model.predict(scaled_features)[0]
+        prediction_proba = dt_model.predict_proba(scaled_features)[0]
+
+        # Get risk level and message
+        risk_level = risk_levels[prediction]
+        message = risk_messages[risk_level]
+
+        # Updated thresholds based on CSV data analysis
+        risk_factors = []
+        thresholds = {
+            'SystolicBP': 140,  # High BP threshold
+            'DiastolicBP': 90,  # High BP threshold
+            'BS': 11.0,  # High blood sugar threshold
+            'BodyTemp': 100.4,  # Fever threshold
+            'HeartRate': 100  # High heart rate threshold
+        }
+
+        # Analyze risk factors
+        for param, threshold in thresholds.items():
+            value = input_data[param].iloc[0]
+            if value > threshold:
+                if param == 'BS':
+                    risk_factors.append("High Blood Sugar")
+                elif param == 'BodyTemp':
+                    risk_factors.append("Fever")
+                elif param == 'HeartRate':
+                    risk_factors.append("Elevated Heart Rate")
+                else:
+                    risk_factors.append(f"High {param}")
+
+        # Add age-related risk factor
+        if not (18 <= input_data['Age'].iloc[0] <= 35):
+            risk_factors.append("Age-related risk factor")
 
         return jsonify({
             'success': True,
             'prediction': int(prediction),
             'risk_level': risk_level,
             'message': message,
-            'confidence': confidence
+            'confidence': float(max(prediction_proba) * 100),
+            'risk_factors': risk_factors,
+            'probabilities': {
+                'low_risk': float(prediction_proba[0]),
+                'mid_risk': float(prediction_proba[1]),
+                'high_risk': float(prediction_proba[2])
+            }
         })
 
     except ValueError as ve:
-        app.logger.warning(f"Validation error: {str(ve)}")
-        return jsonify({
-            'success': False,
-            'error': str(ve)
-        }), 400
+        return jsonify({'success': False, 'error': str(ve)}), 400
     except Exception as e:
         app.logger.error(f"Error processing decision tree request: {str(e)}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # Load Naive Bayes model

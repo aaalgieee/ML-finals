@@ -149,8 +149,8 @@ const algorithms = [
       { name: 'Age', type: 'number', min: 13, max: 70, placeholder: 'Enter age', help: 'Mother\'s age in years' },
       { name: 'Systolic BP', type: 'number', min: 70, max: 180, placeholder: 'Enter systolic BP', help: 'Upper blood pressure number', unit: 'mmHg' },
       { name: 'Diastolic BP', type: 'number', min: 40, max: 120, placeholder: 'Enter diastolic BP', help: 'Lower blood pressure number', unit: 'mmHg' },
-      { name: 'Blood Sugar', type: 'number', min: 30, max: 300, placeholder: 'Enter blood sugar', help: 'Blood glucose level', unit: 'mg/dL' },
-      { name: 'Body Temperature', type: 'number', min: 35, max: 42, step: 0.1, placeholder: 'Enter temperature', help: 'Body temperature', unit: '°C' },
+      { name: 'Blood Sugar', type: 'number', min: 6.0, max: 19.0, step: 0.1, placeholder: 'Enter blood sugar', help: 'Blood glucose level', unit: 'mmol/L' },
+      { name: 'Body Temperature', type: 'number', min: 97.0, max: 103.0, step: 0.1, placeholder: 'Enter temperature', help: 'Body temperature', unit: '°F' },
       { name: 'Heart Rate', type: 'number', min: 40, max: 200, placeholder: 'Enter heart rate', help: 'Heart beats per minute', unit: 'bpm' }
     ]
   },
@@ -289,17 +289,17 @@ export default function AlgorithmTest() {
       try {
         const transformedInputs = {
           age: Number(inputs['Age']),
-          male: inputs['Gender'] === 'Male' ? 1 : 0,  // Convert Gender to binary
-          currentSmoker: inputs['Current Smoker'] === 'true' ? 1 : 0,
+          male: inputs['Gender'] === 'Male' ? 1 : 0,
           cigsPerDay: Number(inputs['Cigarettes Per Day']),
           BPMeds: inputs['BP Medications'] === 'true' ? 1 : 0,
-          diabetes: inputs['Diabetes'] === 'true' ? 1 : 0,
           totChol: Number(inputs['Total Cholesterol']),
           sysBP: Number(inputs['Systolic BP']),
           diaBP: Number(inputs['Diastolic BP']),
           BMI: Number(inputs['BMI']),
           heartRate: Number(inputs['Heart Rate']),
-          glucose: Number(inputs['Glucose'])
+          glucose: Number(inputs['Glucose']),
+          currentSmoker: inputs['Current Smoker'] === 'true' ? 1 : 0,
+          diabetes: inputs['Diabetes'] === 'true' ? 1 : 0
         }
   
         const response = await fetch(`${API_URL}/api/lr/predict`, {
@@ -316,11 +316,36 @@ export default function AlgorithmTest() {
   
         const data: PredictionResponse = await response.json()
         if (data.success) {
+          const riskColor = data.risk_level === 'Low Risk' 
+            ? 'text-green-600' 
+            : data.risk_level === 'Moderate Risk'
+            ? 'text-yellow-600'
+            : data.risk_level === 'High Risk'
+            ? 'text-orange-600'
+            : 'text-red-600';
+
           setResult(
-            <div className="space-y-2">
-              <p className="font-semibold">{data.risk_level}</p>
-              <p>{data.message}</p>
-              <p className="text-sm text-gray-600">Risk Score: {data.prediction.toFixed(1)}%</p>
+            <div className="space-y-4">
+              <div className={`text-2xl font-bold ${riskColor}`}>
+                {data.risk_level}
+              </div>
+              <p className="text-gray-700">{data.message}</p>
+              <div className="mt-4 bg-gray-100 p-4 rounded-lg">
+                <div className="text-sm text-gray-600">Risk Score</div>
+                <div className="text-lg font-semibold">
+                  {data.prediction.toFixed(1)}%
+                </div>
+              </div>
+              {data.risk_factors && data.risk_factors.length > 0 && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-700 mb-2">Risk Factors:</h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    {data.risk_factors.map((factor, index) => (
+                      <li key={index} className="text-gray-600">{factor}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )
         } else {
